@@ -2,8 +2,10 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Block Blast - Perfect Drag & Size Up</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Block Blast - Safari Fullscreen Edition</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Noto+Sans+KR:wght@700;900&display=swap');
 
@@ -38,30 +40,31 @@
             color: #ffffff;
             font-family: 'Fredoka One', 'Noto Sans KR', sans-serif;
             display: flex; flex-direction: column; align-items: center; justify-content: space-between;
-            height: 100dvh; /* 모바일 하단바 대응 */
+            height: 100vh;
+            height: 100dvh; /* 모바일 브라우저 주소창 대응 */
+            width: 100vw;
             overflow: hidden;
+            position: fixed; /* 사파리 바운스/스크롤 방지 */
             transition: background 0.8s ease;
         }
 
-        /* 헤더 UI */
         header {
-            width: 100%; max-width: 500px; padding: 25px 20px 10px;
+            width: 100%; max-width: 500px; padding: 20px 20px 5px;
             display: flex; justify-content: space-around; align-items: center; z-index: 10;
         }
 
         .stat-box {
             background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(5px);
-            padding: 12px 28px; border-radius: 20px; text-align: center;
+            padding: 10px 24px; border-radius: 20px; text-align: center;
             box-shadow: 0 8px 20px rgba(0,0,0,0.2), inset 0 2px 2px rgba(255,255,255,0.2);
             border: 2px solid rgba(255, 255, 255, 0.1); min-width: 130px;
         }
-        .stat-label { font-size: 0.85rem; color: #d1d8ff; letter-spacing: 1px; margin-bottom: 4px; }
-        .stat-value { font-size: 2.2rem; color: #ffea00; text-shadow: 0 0 10px rgba(255,234,0,0.5); transition: transform 0.2s; }
+        .stat-label { font-size: 0.8rem; color: #d1d8ff; letter-spacing: 1px; margin-bottom: 2px; }
+        .stat-value { font-size: 2rem; color: #ffea00; text-shadow: 0 0 10px rgba(255,234,0,0.5); transition: transform 0.2s; }
 
-        /* 게임 보드 (크기 대폭 확대) */
         .board-container {
             flex: 1; display: flex; align-items: center; justify-content: center;
-            width: 100%; max-width: 500px; padding: 15px;
+            width: 100%; max-width: 500px; padding: 10px;
         }
 
         #board {
@@ -83,35 +86,30 @@
 
         @keyframes popIn { 0% { transform: scale(0.8); } 100% { transform: scale(1); } }
 
-        /* 하단 블록 생성 구역 */
         .shapes-container {
             display: flex; justify-content: space-around; align-items: center;
-            width: 100%; max-width: 500px; height: 180px; padding-bottom: 30px;
+            width: 100%; max-width: 500px; height: 160px; padding-bottom: 20px;
         }
 
-        /* 블록 슬롯 정중앙 배치 보장 */
         .shape-slot {
-            width: 120px; height: 120px;
+            width: 110px; height: 110px;
             display: flex; align-items: center; justify-content: center;
         }
 
         .draggable-shape { display: grid; gap: 3px; cursor: grab; }
         .draggable-shape:active { cursor: grabbing; }
 
-        /* 개별 블록 유닛 크기 대폭 확대 (22px -> 34px) */
         .block-unit {
-            width: 34px; height: 34px; border-radius: 6px;
+            width: 32px; height: 32px; border-radius: 6px;
             box-shadow: inset 0 3px 0 rgba(255,255,255,0.4), 0 3px 6px rgba(0,0,0,0.3);
         }
 
-        /* 드래그 클론 */
         .dragging-clone {
             position: fixed; pointer-events: none; z-index: 10000;
-            transform-origin: center center; /* 정중앙 기준 스케일링 */
+            transform-origin: center center;
             filter: drop-shadow(0 20px 20px rgba(0,0,0,0.6));
         }
 
-        /* 기타 이펙트 및 모달 */
         .floating-text {
             position: absolute; font-size: 2.5rem; font-weight: 900; color: #fff;
             text-shadow: 0 0 15px rgba(255, 255, 255, 0.8), 0 5px 5px rgba(0,0,0,0.5);
@@ -186,8 +184,24 @@
     </div>
 
     <script>
+        // 사파리 초기 터치 시 전체화면 활성화 유도
+        function requestFullScreen() {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen().catch(() => {});
+            } else if (elem.webkitRequestFullscreen) { /* 사파리 대응 */
+                elem.webkitRequestFullscreen();
+            }
+        }
+
+        // 유저가 화면을 처음 터치하거나 클릭할 때 전체화면 모드 작동
+        window.addEventListener('pointerdown', function initFS() {
+            requestFullScreen();
+            window.removeEventListener('pointerdown', initFS);
+        }, { once: true });
+
         const BOARD_SIZE = 8;
-        const BASE_UNIT_SIZE = 34; // CSS의 block-unit 크기와 동일해야 함
+        const BASE_UNIT_SIZE = 32;
         
         const boardEl = document.getElementById('board');
         const scoreEl = document.getElementById('score');
@@ -309,7 +323,6 @@
             checkGameOver();
         }
 
-        // --- 완벽한 드래그 & 센터링 로직 ---
         let activeClone = null;
         let dragSlotIndex = -1;
 
@@ -323,9 +336,7 @@
             activeClone = original.cloneNode(true);
             activeClone.classList.add('dragging-clone');
             
-            // 보드 칸 크기에 맞춰 블록 크기 확대 계산
             const boardRect = boardEl.getBoundingClientRect();
-            // (전체너비 - (패딩8*2) - (갭4*7)) / 8
             const cellWidth = (boardRect.width - 16 - 28) / 8;
             const scaleFactor = cellWidth / BASE_UNIT_SIZE;
             
@@ -340,13 +351,11 @@
 
         function moveClone(x, y) {
             if (activeClone) {
-                // transformOrigin이 center이므로 offsetWidth/2를 빼주면 마우스/손가락 위치가 정확히 중앙이 됨
                 activeClone.style.left = `${x - activeClone.offsetWidth / 2}px`;
                 activeClone.style.top = `${y - activeClone.offsetHeight / 2}px`;
             }
         }
 
-        // 화면 픽셀 위치를 계산하여 정확한 보드 인덱스로 변환
         function getGridPosition() {
             if (!activeClone) return null;
             const cloneRect = activeClone.getBoundingClientRect();
@@ -355,7 +364,6 @@
             const cellStepX = boardRect.width / BOARD_SIZE;
             const cellStepY = boardRect.height / BOARD_SIZE;
 
-            // 드래그 중인 블록의 좌측상단이 보드판 내에서 어느 위치인지 계산
             const offsetX = cloneRect.left - boardRect.left;
             const offsetY = cloneRect.top - boardRect.top;
 
@@ -402,7 +410,7 @@
                 else checkGameOver();
             } else {
                 if (original) original.style.opacity = '1';
-                if (navigator.vibrate) navigator.vibrate([20, 20]); // 실패 진동
+                if (navigator.vibrate) navigator.vibrate([20, 20]);
             }
 
             activeClone.remove();
@@ -434,7 +442,6 @@
                     if (matrix[r][c]) {
                         const targetR = startR + r;
                         const targetC = startC + c;
-                        // 맵 밖으로 나가거나 이미 블록이 있으면 배치 불가
                         if (targetR < 0 || targetR >= BOARD_SIZE || targetC < 0 || targetC >= BOARD_SIZE || board[targetR][targetC]) {
                             return false;
                         }
@@ -455,7 +462,7 @@
                 }
             }
             
-            addScore(placedUnits); // 블록당 1점
+            addScore(placedUnits);
             renderBoard();
             checkAndClearLines(clientX, clientY);
         }
@@ -534,7 +541,6 @@
             initBoard(); renderBoard(); spawnShapes(); startTimer();
         }
 
-        // 디버그
         let debugClicks = 0, debugTimer = null;
         document.getElementById('debug-zone').addEventListener('pointerdown', () => {
             debugClicks++;
@@ -546,4 +552,3 @@
         initBoard(); spawnShapes(); startTimer();
     </script>
 </body>
-</html>
