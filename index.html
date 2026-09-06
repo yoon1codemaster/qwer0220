@@ -6,12 +6,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Block Blast - Neon Edition</title>
-    <link rel="icon" type="image/jpeg" href="image_c2290b.jpg">
+    <link rel="icon" type="image/jpeg" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/4QBaRXhpZgAATU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAAExAAIAAAARAAAATgAAAAAAAABIAAAAAQAAAEgAAAABPHBuZ3RyZWX/7QAsUGhvdG9zaG... (생략)...">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Noto+Sans+KR:wght@700;900&display=swap');
 
         :root {
-            /* 전면 개편된 세련된 네온 퍼플/블루 색감 */
             --bg-grad: linear-gradient(180deg, #1f1c2c 0%, #928dab 100%);
             --board-bg: #111322;
             --board-border: #3b3a60;
@@ -186,7 +185,7 @@
             <div class="shape-slot" data-slot="1"></div>
             <div class="shape-slot" data-slot="2"></div>
         </div>
-        <div class="app-version">v1.3.0 • BLOCK BLAST</div>
+        <div class="app-version">v1.3.1 • BLOCK BLAST</div>
     </div>
 
     <div id="debug-zone"></div>
@@ -217,20 +216,17 @@
             window.removeEventListener('pointerdown', initFS);
         }, { once: true });
 
-        // 진동 에러 방지용 안전 함수
         function safeVibrate(pattern) {
             try {
                 if (navigator.vibrate) {
                     navigator.vibrate(pattern);
                 }
-            } catch (err) {
-                // 브라우저 권한/환경 문제로 진동이 막혀도 게임에 지장 없도록 무시
-            }
+            } catch (err) {}
         }
 
         const BOARD_SIZE = 8;
         const BASE_UNIT_SIZE = 32;
-        const DRAG_SENSITIVITY = 1.5; // 💡 손이 움직인 것보다 블록이 1.5배 더 많이 움직이도록 설정
+        const DRAG_SENSITIVITY = 1.5;
         
         const boardEl = document.getElementById('board');
         const scoreEl = document.getElementById('score');
@@ -594,3 +590,4 @@
         initBoard(); spawnShapes(); startTimer();
     </script>
 </body>
+</html>
