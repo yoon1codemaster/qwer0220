@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Block Blast - Perfect Drag & Size Up</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Noto+Sans+KR:wght@700;900&display=swap');
+
+        :root {
+            --bg-grad: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
+            --board-bg: #151c38;
+            --board-border: #2e3b75;
+            --cell-empty: #232d56;
+            --btn-bg: linear-gradient(135deg, #00f2fe, #4facfe);
+        }
+
+        body[data-theme="1"] {
+            --bg-grad: linear-gradient(180deg, #ff7e5f 0%, #feb47b 100%);
+            --board-bg: #361515; --board-border: #752e2e; --cell-empty: #522626; --btn-bg: linear-gradient(135deg, #ff7e5f, #feb47b);
+        }
+        body[data-theme="2"] {
+            --bg-grad: linear-gradient(180deg, #11998e 0%, #38ef7d 100%);
+            --board-bg: #102919; --board-border: #235937; --cell-empty: #1f422b; --btn-bg: linear-gradient(135deg, #11998e, #38ef7d);
+        }
+        body[data-theme="3"] {
+            --bg-grad: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            --board-bg: #1b152e; --board-border: #3f316b; --cell-empty: #2d244a; --btn-bg: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        * {
+            box-sizing: border-box; margin: 0; padding: 0;
+            user-select: none; -webkit-user-select: none; touch-action: none;
+        }
+
+        body {
+            background: var(--bg-grad);
+            color: #ffffff;
+            font-family: 'Fredoka One', 'Noto Sans KR', sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+            height: 100dvh; /* 모바일 하단바 대응 */
+            overflow: hidden;
+            transition: background 0.8s ease;
+        }
+
+        /* 헤더 UI */
+        header {
+            width: 100%; max-width: 500px; padding: 25px 20px 10px;
+            display: flex; justify-content: space-around; align-items: center; z-index: 10;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(5px);
+            padding: 12px 28px; border-radius: 20px; text-align: center;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2), inset 0 2px 2px rgba(255,255,255,0.2);
+            border: 2px solid rgba(255, 255, 255, 0.1); min-width: 130px;
+        }
+        .stat-label { font-size: 0.85rem; color: #d1d8ff; letter-spacing: 1px; margin-bottom: 4px; }
+        .stat-value { font-size: 2.2rem; color: #ffea00; text-shadow: 0 0 10px rgba(255,234,0,0.5); transition: transform 0.2s; }
+
+        /* 게임 보드 (크기 대폭 확대) */
+        .board-container {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            width: 100%; max-width: 500px; padding: 15px;
+        }
+
+        #board {
+            display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); gap: 4px;
+            background-color: var(--board-bg); padding: 8px; border-radius: 20px;
+            width: 100%; aspect-ratio: 1;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4), inset 0 4px 10px rgba(0,0,0,0.3);
+            border: 4px solid var(--board-border); position: relative;
+            transition: background-color 0.8s ease, border-color 0.8s ease;
+        }
+
+        .cell { background-color: var(--cell-empty); border-radius: 6px; transition: background-color 0.15s; }
+        .cell.highlight { background-color: rgba(255, 255, 255, 0.4) !important; box-shadow: inset 0 0 12px #fff; }
+        .cell.filled {
+            box-shadow: inset 0 4px 0 rgba(255,255,255,0.3), 0 4px 8px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            animation: popIn 0.2s ease forwards;
+        }
+
+        @keyframes popIn { 0% { transform: scale(0.8); } 100% { transform: scale(1); } }
+
+        /* 하단 블록 생성 구역 */
+        .shapes-container {
+            display: flex; justify-content: space-around; align-items: center;
+            width: 100%; max-width: 500px; height: 180px; padding-bottom: 30px;
+        }
+
+        /* 블록 슬롯 정중앙 배치 보장 */
+        .shape-slot {
+            width: 120px; height: 120px;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .draggable-shape { display: grid; gap: 3px; cursor: grab; }
+        .draggable-shape:active { cursor: grabbing; }
+
+        /* 개별 블록 유닛 크기 대폭 확대 (22px -> 34px) */
+        .block-unit {
+            width: 34px; height: 34px; border-radius: 6px;
+            box-shadow: inset 0 3px 0 rgba(255,255,255,0.4), 0 3px 6px rgba(0,0,0,0.3);
+        }
+
+        /* 드래그 클론 */
+        .dragging-clone {
+            position: fixed; pointer-events: none; z-index: 10000;
+            transform-origin: center center; /* 정중앙 기준 스케일링 */
+            filter: drop-shadow(0 20px 20px rgba(0,0,0,0.6));
+        }
+
+        /* 기타 이펙트 및 모달 */
+        .floating-text {
+            position: absolute; font-size: 2.5rem; font-weight: 900; color: #fff;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.8), 0 5px 5px rgba(0,0,0,0.5);
+            pointer-events: none; z-index: 15000;
+            animation: floatUp 1s cubic-bezier(0.2, 1, 0.2, 1) forwards;
+        }
+        @keyframes floatUp {
+            0% { transform: translate(-50%, 0) scale(0.5); opacity: 0; }
+            20% { transform: translate(-50%, -20px) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -80px) scale(1); opacity: 0; }
+        }
+
+        #game-over-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 20000; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        #game-over-modal.active { opacity: 1; pointer-events: auto; }
+        .modal-card {
+            background: #1e1e1e; padding: 40px 30px; border-radius: 30px; text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8); border: 3px solid rgba(255,255,255,0.2);
+            max-width: 360px; width: 90%; transform: scale(0.8); transition: transform 0.3s;
+        }
+        #game-over-modal.active .modal-card { transform: scale(1); }
+        .modal-title { font-size: 2.5rem; color: #fff; margin-bottom: 20px; }
+        .modal-result { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; margin-bottom: 25px; }
+        .modal-result p { font-size: 1.1rem; color: #ccc; margin: 10px 0; }
+        .modal-result span { font-size: 1.8rem; color: #ffea00; font-weight: bold; }
+        .restart-btn {
+            background: var(--btn-bg); border: none; color: #000; font-family: inherit;
+            font-size: 1.4rem; font-weight: bold; padding: 15px 40px; border-radius: 50px; cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: background 0.8s ease;
+        }
+        #debug-zone { position: fixed; bottom: 0; left: 0; width: 70px; height: 70px; z-index: 99999; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="stat-box">
+            <div class="stat-label">SCORE</div>
+            <div class="stat-value" id="score">0</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">TIME</div>
+            <div class="stat-value" id="timer">00:00</div>
+        </div>
+    </header>
+
+    <div class="board-container">
+        <div id="board"></div>
+    </div>
+
+    <div class="shapes-container" id="shapes-container">
+        <div class="shape-slot" data-slot="0"></div>
+        <div class="shape-slot" data-slot="1"></div>
+        <div class="shape-slot" data-slot="2"></div>
+    </div>
+
+    <div id="debug-zone"></div>
+
+    <div id="game-over-modal">
+        <div class="modal-card">
+            <div class="modal-title">GAME OVER</div>
+            <div class="modal-result">
+                <p>최종 점수: <span id="final-score">0</span></p>
+                <p>플레이 시간: <span id="final-time">00:00</span></p>
+            </div>
+            <button class="restart-btn" onclick="resetGame()">다시하기</button>
+        </div>
+    </div>
+
+    <script>
+        const BOARD_SIZE = 8;
+        const BASE_UNIT_SIZE = 34; // CSS의 block-unit 크기와 동일해야 함
+        
+        const boardEl = document.getElementById('board');
+        const scoreEl = document.getElementById('score');
+        const timerEl = document.getElementById('timer');
+        const slots = document.querySelectorAll('.shape-slot');
+        
+        let board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(null));
+        let score = 0;
+        let secondsElapsed = 0;
+        let timerInterval = null;
+        let currentShapes = [null, null, null];
+        let currentTheme = 0;
+
+        const SHAPES_LIBRARY = [
+            { matrix: [[1]], color: 'linear-gradient(135deg, #FF007F, #FF5E7E)' },
+            { matrix: [[1,1],[1,1]], color: 'linear-gradient(135deg, #00F2FE, #4FACFE)' },
+            { matrix: [[1,1,1]], color: 'linear-gradient(135deg, #FFEA00, #FF9000)' },
+            { matrix: [[1],[1],[1]], color: 'linear-gradient(135deg, #FFEA00, #FF9000)' },
+            { matrix: [[1,1,1],[1,0,0],[1,0,0]], color: 'linear-gradient(135deg, #B537F2, #7928CA)' },
+            { matrix: [[1,1],[1,0]], color: 'linear-gradient(135deg, #00FF87, #60EFFF)' },
+            { matrix: [[1,1,1],[0,1,0]], color: 'linear-gradient(135deg, #FF0844, #FFB199)' },
+            { matrix: [[1,1,1,1]], color: 'linear-gradient(135deg, #F12711, #F5AF19)' },
+            { matrix: [[1,1,1],[1,1,1],[1,1,1]], color: 'linear-gradient(135deg, #00C9FF, #92FE9D)' }
+        ];
+
+        function addScore(points) {
+            score += points;
+            scoreEl.innerText = score;
+            scoreEl.style.transform = 'scale(1.4)';
+            setTimeout(() => scoreEl.style.transform = 'scale(1)', 150);
+        }
+
+        function showFloatingText(text, x, y, color = '#fff') {
+            const el = document.createElement('div');
+            el.className = 'floating-text';
+            el.innerText = text;
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+            el.style.color = color;
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 1000);
+        }
+
+        function changeMapTheme() {
+            currentTheme = (currentTheme + 1) % 4;
+            document.body.dataset.theme = currentTheme;
+            const rect = boardEl.getBoundingClientRect();
+            showFloatingText("PERFECT CLEAR!", rect.left + rect.width / 2, rect.top + rect.height / 2, '#ffea00');
+            if(navigator.vibrate) navigator.vibrate([100, 50, 200]);
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            secondsElapsed = 0;
+            timerInterval = setInterval(() => {
+                secondsElapsed++;
+                const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+                const secs = String(secondsElapsed % 60).padStart(2, '0');
+                timerEl.innerText = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function initBoard() {
+            boardEl.innerHTML = '';
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    boardEl.appendChild(cell);
+                }
+            }
+        }
+
+        function renderBoard() {
+            const cells = boardEl.children;
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    const idx = r * BOARD_SIZE + c;
+                    const cell = cells[idx];
+                    if (board[r][c]) {
+                        cell.style.background = board[r][c];
+                        cell.classList.add('filled');
+                    } else {
+                        cell.style.background = '';
+                        cell.classList.remove('filled');
+                    }
+                }
+            }
+        }
+
+        function createShapeElement(shapeData, slotIdx) {
+            const shapeEl = document.createElement('div');
+            shapeEl.classList.add('draggable-shape');
+            shapeEl.dataset.slot = slotIdx;
+            shapeEl.style.gridTemplateColumns = `repeat(${shapeData.matrix[0].length}, ${BASE_UNIT_SIZE}px)`;
+
+            shapeData.matrix.forEach(row => {
+                row.forEach(val => {
+                    const unit = document.createElement('div');
+                    unit.classList.add('block-unit');
+                    if (val) unit.style.background = shapeData.color;
+                    else unit.style.opacity = '0';
+                    shapeEl.appendChild(unit);
+                });
+            });
+
+            shapeEl.addEventListener('pointerdown', (e) => onDragStart(e, slotIdx));
+            return shapeEl;
+        }
+
+        function spawnShapes() {
+            slots.forEach((slot, i) => {
+                slot.innerHTML = '';
+                const randomShape = SHAPES_LIBRARY[Math.floor(Math.random() * SHAPES_LIBRARY.length)];
+                currentShapes[i] = randomShape;
+                const shapeEl = createShapeElement(randomShape, i);
+                slot.appendChild(shapeEl);
+            });
+            checkGameOver();
+        }
+
+        // --- 완벽한 드래그 & 센터링 로직 ---
+        let activeClone = null;
+        let dragSlotIndex = -1;
+
+        function onDragStart(e, slotIdx) {
+            if (!currentShapes[slotIdx]) return;
+            dragSlotIndex = slotIdx;
+            const original = slots[slotIdx].querySelector('.draggable-shape');
+            if(!original) return;
+
+            if (navigator.vibrate) navigator.vibrate(15);
+            activeClone = original.cloneNode(true);
+            activeClone.classList.add('dragging-clone');
+            
+            // 보드 칸 크기에 맞춰 블록 크기 확대 계산
+            const boardRect = boardEl.getBoundingClientRect();
+            // (전체너비 - (패딩8*2) - (갭4*7)) / 8
+            const cellWidth = (boardRect.width - 16 - 28) / 8;
+            const scaleFactor = cellWidth / BASE_UNIT_SIZE;
+            
+            activeClone.style.transform = `scale(${scaleFactor})`;
+            document.body.appendChild(activeClone);
+            original.style.opacity = '0.2';
+
+            moveClone(e.clientX, e.clientY);
+            window.addEventListener('pointermove', onDragMove);
+            window.addEventListener('pointerup', onDragEnd);
+        }
+
+        function moveClone(x, y) {
+            if (activeClone) {
+                // transformOrigin이 center이므로 offsetWidth/2를 빼주면 마우스/손가락 위치가 정확히 중앙이 됨
+                activeClone.style.left = `${x - activeClone.offsetWidth / 2}px`;
+                activeClone.style.top = `${y - activeClone.offsetHeight / 2}px`;
+            }
+        }
+
+        // 화면 픽셀 위치를 계산하여 정확한 보드 인덱스로 변환
+        function getGridPosition() {
+            if (!activeClone) return null;
+            const cloneRect = activeClone.getBoundingClientRect();
+            const boardRect = boardEl.getBoundingClientRect();
+
+            const cellStepX = boardRect.width / BOARD_SIZE;
+            const cellStepY = boardRect.height / BOARD_SIZE;
+
+            // 드래그 중인 블록의 좌측상단이 보드판 내에서 어느 위치인지 계산
+            const offsetX = cloneRect.left - boardRect.left;
+            const offsetY = cloneRect.top - boardRect.top;
+
+            const startC = Math.round(offsetX / cellStepX);
+            const startR = Math.round(offsetY / cellStepY);
+
+            return { r: startR, c: startC };
+        }
+
+        function onDragMove(e) {
+            if (!activeClone) return;
+            moveClone(e.clientX, e.clientY);
+
+            clearHighlights();
+            const pos = getGridPosition();
+            if (pos) {
+                const shape = currentShapes[dragSlotIndex];
+                if (canPlace(shape.matrix, pos.r, pos.c)) {
+                    highlightArea(shape.matrix, pos.r, pos.c);
+                }
+            }
+        }
+
+        function onDragEnd(e) {
+            if (!activeClone) return;
+            
+            let placed = false;
+            const pos = getGridPosition();
+            
+            if (pos) {
+                const shape = currentShapes[dragSlotIndex];
+                if (canPlace(shape.matrix, pos.r, pos.c)) {
+                    placeShape(shape, pos.r, pos.c, e.clientX, e.clientY);
+                    placed = true;
+                }
+            }
+
+            const original = slots[dragSlotIndex].querySelector('.draggable-shape');
+            if (placed) {
+                if (navigator.vibrate) navigator.vibrate(30);
+                if (original) original.remove();
+                currentShapes[dragSlotIndex] = null;
+                if (currentShapes.every(s => s === null)) spawnShapes();
+                else checkGameOver();
+            } else {
+                if (original) original.style.opacity = '1';
+                if (navigator.vibrate) navigator.vibrate([20, 20]); // 실패 진동
+            }
+
+            activeClone.remove();
+            activeClone = null;
+            clearHighlights();
+            window.removeEventListener('pointermove', onDragMove);
+            window.removeEventListener('pointerup', onDragEnd);
+        }
+
+        function clearHighlights() {
+            document.querySelectorAll('.cell.highlight').forEach(el => el.classList.remove('highlight'));
+        }
+
+        function highlightArea(matrix, startR, startC) {
+            for (let r = 0; r < matrix.length; r++) {
+                for (let c = 0; c < matrix[r].length; c++) {
+                    if (matrix[r][c]) {
+                        const cellIdx = (startR + r) * BOARD_SIZE + (startC + c);
+                        const cell = boardEl.children[cellIdx];
+                        if (cell) cell.classList.add('highlight');
+                    }
+                }
+            }
+        }
+
+        function canPlace(matrix, startR, startC) {
+            for (let r = 0; r < matrix.length; r++) {
+                for (let c = 0; c < matrix[r].length; c++) {
+                    if (matrix[r][c]) {
+                        const targetR = startR + r;
+                        const targetC = startC + c;
+                        // 맵 밖으로 나가거나 이미 블록이 있으면 배치 불가
+                        if (targetR < 0 || targetR >= BOARD_SIZE || targetC < 0 || targetC >= BOARD_SIZE || board[targetR][targetC]) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        function placeShape(shape, startR, startC, clientX, clientY) {
+            let placedUnits = 0;
+            for (let r = 0; r < shape.matrix.length; r++) {
+                for (let c = 0; c < shape.matrix[r].length; c++) {
+                    if (shape.matrix[r][c]) {
+                        board[startR + r][startC + c] = shape.color;
+                        placedUnits++;
+                    }
+                }
+            }
+            
+            addScore(placedUnits); // 블록당 1점
+            renderBoard();
+            checkAndClearLines(clientX, clientY);
+        }
+
+        function checkAndClearLines(clientX, clientY) {
+            let rowsToClear = [];
+            let colsToClear = [];
+
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                if (board[r].every(cell => cell !== null)) rowsToClear.push(r);
+            }
+            for (let c = 0; c < BOARD_SIZE; c++) {
+                let isFull = true;
+                for (let r = 0; r < BOARD_SIZE; r++) {
+                    if (board[r][c] === null) { isFull = false; break; }
+                }
+                if (isFull) colsToClear.push(c);
+            }
+
+            const totalCleared = rowsToClear.length + colsToClear.length;
+            
+            if (totalCleared > 0) {
+                rowsToClear.forEach(r => { for (let c = 0; c < BOARD_SIZE; c++) board[r][c] = null; });
+                colsToClear.forEach(c => { for (let r = 0; r < BOARD_SIZE; r++) board[r][c] = null; });
+
+                if (navigator.vibrate) navigator.vibrate([50, 30, 80]);
+                
+                const clearScore = 10 * (totalCleared ** 2);
+                addScore(clearScore);
+
+                const rect = boardEl.getBoundingClientRect();
+                showFloatingText(`+${clearScore}`, rect.left + rect.width / 2, clientY || rect.top + rect.height / 2);
+                
+                renderBoard();
+
+                let isBoardEmpty = true;
+                for(let r=0; r<BOARD_SIZE; r++) {
+                    for(let c=0; c<BOARD_SIZE; c++) {
+                        if(board[r][c] !== null) { isBoardEmpty = false; break; }
+                    }
+                }
+                if(isBoardEmpty) changeMapTheme();
+            }
+        }
+
+        function checkGameOver() {
+            let canPlaceAny = false;
+            for (let i = 0; i < currentShapes.length; i++) {
+                const shape = currentShapes[i];
+                if (!shape) continue;
+                for (let r = 0; r < BOARD_SIZE; r++) {
+                    for (let c = 0; c < BOARD_SIZE; c++) {
+                        if (canPlace(shape.matrix, r, c)) {
+                            canPlaceAny = true; break;
+                        }
+                    }
+                    if (canPlaceAny) break;
+                }
+                if (canPlaceAny) break;
+            }
+            if (!canPlaceAny && currentShapes.some(s => s !== null)) triggerGameOver();
+        }
+
+        function triggerGameOver() {
+            clearInterval(timerInterval);
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('final-time').innerText = timerEl.innerText;
+            document.getElementById('game-over-modal').classList.add('active');
+        }
+
+        function resetGame() {
+            board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(null));
+            score = 0; scoreEl.innerText = score;
+            document.body.dataset.theme = "0"; currentTheme = 0;
+            document.getElementById('game-over-modal').classList.remove('active');
+            initBoard(); renderBoard(); spawnShapes(); startTimer();
+        }
+
+        // 디버그
+        let debugClicks = 0, debugTimer = null;
+        document.getElementById('debug-zone').addEventListener('pointerdown', () => {
+            debugClicks++;
+            if (debugTimer) clearTimeout(debugTimer);
+            debugTimer = setTimeout(() => debugClicks = 0, 1500);
+            if (debugClicks >= 5) { addScore(10000); debugClicks = 0; if (navigator.vibrate) navigator.vibrate([50, 50, 100]); }
+        });
+
+        initBoard(); spawnShapes(); startTimer();
+    </script>
+</body>
+</html>
