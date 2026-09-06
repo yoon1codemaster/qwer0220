@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Block Blast - Safari Fullscreen Edition</title>
+    <title>Block Blast - High Sensitivity Edition</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Noto+Sans+KR:wght@700;900&display=swap');
 
@@ -41,15 +41,15 @@
             font-family: 'Fredoka One', 'Noto Sans KR', sans-serif;
             display: flex; flex-direction: column; align-items: center; justify-content: space-between;
             height: 100vh;
-            height: 100dvh; /* 모바일 브라우저 주소창 대응 */
+            height: 100dvh;
             width: 100vw;
             overflow: hidden;
-            position: fixed; /* 사파리 바운스/스크롤 방지 */
+            position: fixed;
             transition: background 0.8s ease;
         }
 
         header {
-            width: 100%; max-width: 500px; padding: 20px 20px 5px;
+            width: 100%; max-width: 500px; padding: 15px 20px 5px;
             display: flex; justify-content: space-around; align-items: center; z-index: 10;
         }
 
@@ -86,9 +86,14 @@
 
         @keyframes popIn { 0% { transform: scale(0.8); } 100% { transform: scale(1); } }
 
+        .footer-wrapper {
+            display: flex; flex-direction: column; align-items: center;
+            width: 100%; max-width: 500px; padding-bottom: 15px;
+        }
+
         .shapes-container {
             display: flex; justify-content: space-around; align-items: center;
-            width: 100%; max-width: 500px; height: 160px; padding-bottom: 20px;
+            width: 100%; height: 150px;
         }
 
         .shape-slot {
@@ -102,6 +107,15 @@
         .block-unit {
             width: 32px; height: 32px; border-radius: 6px;
             box-shadow: inset 0 3px 0 rgba(255,255,255,0.4), 0 3px 6px rgba(0,0,0,0.3);
+        }
+
+        .app-version {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 1.5px;
+            margin-top: 5px;
+            font-family: 'Noto Sans KR', sans-serif;
+            font-weight: 700;
         }
 
         .dragging-clone {
@@ -164,10 +178,13 @@
         <div id="board"></div>
     </div>
 
-    <div class="shapes-container" id="shapes-container">
-        <div class="shape-slot" data-slot="0"></div>
-        <div class="shape-slot" data-slot="1"></div>
-        <div class="shape-slot" data-slot="2"></div>
+    <div class="footer-wrapper">
+        <div class="shapes-container" id="shapes-container">
+            <div class="shape-slot" data-slot="0"></div>
+            <div class="shape-slot" data-slot="1"></div>
+            <div class="shape-slot" data-slot="2"></div>
+        </div>
+        <div class="app-version">v1.2.0 • BLOCK BLAST</div>
     </div>
 
     <div id="debug-zone"></div>
@@ -184,17 +201,15 @@
     </div>
 
     <script>
-        // 사파리 초기 터치 시 전체화면 활성화 유도
         function requestFullScreen() {
             const elem = document.documentElement;
             if (elem.requestFullscreen) {
                 elem.requestFullscreen().catch(() => {});
-            } else if (elem.webkitRequestFullscreen) { /* 사파리 대응 */
+            } else if (elem.webkitRequestFullscreen) {
                 elem.webkitRequestFullscreen();
             }
         }
 
-        // 유저가 화면을 처음 터치하거나 클릭할 때 전체화면 모드 작동
         window.addEventListener('pointerdown', function initFS() {
             requestFullScreen();
             window.removeEventListener('pointerdown', initFS);
@@ -202,6 +217,7 @@
 
         const BOARD_SIZE = 8;
         const BASE_UNIT_SIZE = 32;
+        const DRAG_SENSITIVITY = 1.4; // 💡 드래그 감도 배율 (1.0 = 1:1, 값이 클수록 더 멀리 빠르게 이동)
         
         const boardEl = document.getElementById('board');
         const scoreEl = document.getElementById('score');
@@ -214,6 +230,11 @@
         let timerInterval = null;
         let currentShapes = [null, null, null];
         let currentTheme = 0;
+
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let initialCloneX = 0;
+        let initialCloneY = 0;
 
         const SHAPES_LIBRARY = [
             { matrix: [[1]], color: 'linear-gradient(135deg, #FF007F, #FF5E7E)' },
@@ -344,6 +365,12 @@
             document.body.appendChild(activeClone);
             original.style.opacity = '0.2';
 
+            // 감도 적용을 위한 초기 터치 위치 및 클론 위치 저장
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            initialCloneX = e.clientX - activeClone.offsetWidth / 2;
+            initialCloneY = e.clientY - activeClone.offsetHeight / 2;
+
             moveClone(e.clientX, e.clientY);
             window.addEventListener('pointermove', onDragMove);
             window.addEventListener('pointerup', onDragEnd);
@@ -351,8 +378,12 @@
 
         function moveClone(x, y) {
             if (activeClone) {
-                activeClone.style.left = `${x - activeClone.offsetWidth / 2}px`;
-                activeClone.style.top = `${y - activeClone.offsetHeight / 2}px`;
+                // 손가락이 움직인 거리(Delta)에 DRAG_SENSITIVITY 배율을 곱해줌
+                const deltaX = (x - dragStartX) * DRAG_SENSITIVITY;
+                const deltaY = (y - dragStartY) * DRAG_SENSITIVITY;
+
+                activeClone.style.left = `${initialCloneX + deltaX}px`;
+                activeClone.style.top = `${initialCloneY + deltaY}px`;
             }
         }
 
