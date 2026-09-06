@@ -5,29 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Block Blast - High Sensitivity Edition</title>
+    <title>Block Blast - Neon Edition</title>
+    <link rel="icon" type="image/jpeg" href="image_c2290b.jpg">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Noto+Sans+KR:wght@700;900&display=swap');
 
         :root {
-            --bg-grad: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
-            --board-bg: #151c38;
-            --board-border: #2e3b75;
-            --cell-empty: #232d56;
-            --btn-bg: linear-gradient(135deg, #00f2fe, #4facfe);
+            /* 전면 개편된 세련된 네온 퍼플/블루 색감 */
+            --bg-grad: linear-gradient(180deg, #1f1c2c 0%, #928dab 100%);
+            --board-bg: #111322;
+            --board-border: #3b3a60;
+            --cell-empty: #1c1f38;
+            --btn-bg: linear-gradient(135deg, #00c6ff, #0072ff);
         }
 
         body[data-theme="1"] {
-            --bg-grad: linear-gradient(180deg, #ff7e5f 0%, #feb47b 100%);
-            --board-bg: #361515; --board-border: #752e2e; --cell-empty: #522626; --btn-bg: linear-gradient(135deg, #ff7e5f, #feb47b);
+            --bg-grad: linear-gradient(180deg, #232526 0%, #414345 100%);
+            --board-bg: #1c1c1c; --board-border: #555555; --cell-empty: #2d2d2d; --btn-bg: linear-gradient(135deg, #f12711, #f5af19);
         }
         body[data-theme="2"] {
-            --bg-grad: linear-gradient(180deg, #11998e 0%, #38ef7d 100%);
-            --board-bg: #102919; --board-border: #235937; --cell-empty: #1f422b; --btn-bg: linear-gradient(135deg, #11998e, #38ef7d);
+            --bg-grad: linear-gradient(180deg, #134e5e 0%, #71b280 100%);
+            --board-bg: #0c2329; --board-border: #1e525e; --cell-empty: #13343d; --btn-bg: linear-gradient(135deg, #11998e, #38ef7d);
         }
         body[data-theme="3"] {
-            --bg-grad: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-            --board-bg: #1b152e; --board-border: #3f316b; --cell-empty: #2d244a; --btn-bg: linear-gradient(135deg, #667eea, #764ba2);
+            --bg-grad: linear-gradient(180deg, #2b5876 0%, #4e4376 100%);
+            --board-bg: #171d30; --board-border: #424e75; --cell-empty: #222a45; --btn-bg: linear-gradient(135deg, #667eea, #764ba2);
         }
 
         * {
@@ -59,8 +61,8 @@
             box-shadow: 0 8px 20px rgba(0,0,0,0.2), inset 0 2px 2px rgba(255,255,255,0.2);
             border: 2px solid rgba(255, 255, 255, 0.1); min-width: 130px;
         }
-        .stat-label { font-size: 0.8rem; color: #d1d8ff; letter-spacing: 1px; margin-bottom: 2px; }
-        .stat-value { font-size: 2rem; color: #ffea00; text-shadow: 0 0 10px rgba(255,234,0,0.5); transition: transform 0.2s; }
+        .stat-label { font-size: 0.8rem; color: #a5b1dl; letter-spacing: 1px; margin-bottom: 2px; }
+        .stat-value { font-size: 2rem; color: #00f2fe; text-shadow: 0 0 10px rgba(0,242,254,0.5); transition: transform 0.2s; }
 
         .board-container {
             flex: 1; display: flex; align-items: center; justify-content: center;
@@ -71,13 +73,13 @@
             display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); gap: 4px;
             background-color: var(--board-bg); padding: 8px; border-radius: 20px;
             width: 100%; aspect-ratio: 1;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.4), inset 0 4px 10px rgba(0,0,0,0.3);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5), inset 0 4px 10px rgba(0,0,0,0.4);
             border: 4px solid var(--board-border); position: relative;
             transition: background-color 0.8s ease, border-color 0.8s ease;
         }
 
         .cell { background-color: var(--cell-empty); border-radius: 6px; transition: background-color 0.15s; }
-        .cell.highlight { background-color: rgba(255, 255, 255, 0.4) !important; box-shadow: inset 0 0 12px #fff; }
+        .cell.highlight { background-color: rgba(0, 242, 254, 0.4) !important; box-shadow: inset 0 0 12px #00f2fe; }
         .cell.filled {
             box-shadow: inset 0 4px 0 rgba(255,255,255,0.3), 0 4px 8px rgba(0,0,0,0.3);
             border: 1px solid rgba(255,255,255,0.2);
@@ -125,8 +127,8 @@
         }
 
         .floating-text {
-            position: absolute; font-size: 2.5rem; font-weight: 900; color: #fff;
-            text-shadow: 0 0 15px rgba(255, 255, 255, 0.8), 0 5px 5px rgba(0,0,0,0.5);
+            position: absolute; font-size: 2.5rem; font-weight: 900; color: #00f2fe;
+            text-shadow: 0 0 15px rgba(0, 242, 254, 0.8), 0 5px 5px rgba(0,0,0,0.5);
             pointer-events: none; z-index: 15000;
             animation: floatUp 1s cubic-bezier(0.2, 1, 0.2, 1) forwards;
         }
@@ -152,9 +154,9 @@
         .modal-title { font-size: 2.5rem; color: #fff; margin-bottom: 20px; }
         .modal-result { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; margin-bottom: 25px; }
         .modal-result p { font-size: 1.1rem; color: #ccc; margin: 10px 0; }
-        .modal-result span { font-size: 1.8rem; color: #ffea00; font-weight: bold; }
+        .modal-result span { font-size: 1.8rem; color: #00f2fe; font-weight: bold; }
         .restart-btn {
-            background: var(--btn-bg); border: none; color: #000; font-family: inherit;
+            background: var(--btn-bg); border: none; color: #fff; font-family: inherit;
             font-size: 1.4rem; font-weight: bold; padding: 15px 40px; border-radius: 50px; cursor: pointer;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: background 0.8s ease;
         }
@@ -184,7 +186,7 @@
             <div class="shape-slot" data-slot="1"></div>
             <div class="shape-slot" data-slot="2"></div>
         </div>
-        <div class="app-version">v1.2.0 • BLOCK BLAST</div>
+        <div class="app-version">v1.3.0 • BLOCK BLAST</div>
     </div>
 
     <div id="debug-zone"></div>
@@ -215,9 +217,20 @@
             window.removeEventListener('pointerdown', initFS);
         }, { once: true });
 
+        // 진동 에러 방지용 안전 함수
+        function safeVibrate(pattern) {
+            try {
+                if (navigator.vibrate) {
+                    navigator.vibrate(pattern);
+                }
+            } catch (err) {
+                // 브라우저 권한/환경 문제로 진동이 막혀도 게임에 지장 없도록 무시
+            }
+        }
+
         const BOARD_SIZE = 8;
         const BASE_UNIT_SIZE = 32;
-        const DRAG_SENSITIVITY = 1.4; // 💡 드래그 감도 배율 (1.0 = 1:1, 값이 클수록 더 멀리 빠르게 이동)
+        const DRAG_SENSITIVITY = 1.5; // 💡 손이 움직인 것보다 블록이 1.5배 더 많이 움직이도록 설정
         
         const boardEl = document.getElementById('board');
         const scoreEl = document.getElementById('score');
@@ -237,15 +250,15 @@
         let initialCloneY = 0;
 
         const SHAPES_LIBRARY = [
-            { matrix: [[1]], color: 'linear-gradient(135deg, #FF007F, #FF5E7E)' },
-            { matrix: [[1,1],[1,1]], color: 'linear-gradient(135deg, #00F2FE, #4FACFE)' },
-            { matrix: [[1,1,1]], color: 'linear-gradient(135deg, #FFEA00, #FF9000)' },
-            { matrix: [[1],[1],[1]], color: 'linear-gradient(135deg, #FFEA00, #FF9000)' },
-            { matrix: [[1,1,1],[1,0,0],[1,0,0]], color: 'linear-gradient(135deg, #B537F2, #7928CA)' },
-            { matrix: [[1,1],[1,0]], color: 'linear-gradient(135deg, #00FF87, #60EFFF)' },
-            { matrix: [[1,1,1],[0,1,0]], color: 'linear-gradient(135deg, #FF0844, #FFB199)' },
-            { matrix: [[1,1,1,1]], color: 'linear-gradient(135deg, #F12711, #F5AF19)' },
-            { matrix: [[1,1,1],[1,1,1],[1,1,1]], color: 'linear-gradient(135deg, #00C9FF, #92FE9D)' }
+            { matrix: [[1]], color: 'linear-gradient(135deg, #00c6ff, #0072ff)' },
+            { matrix: [[1,1],[1,1]], color: 'linear-gradient(135deg, #fa709a, #fee140)' },
+            { matrix: [[1,1,1]], color: 'linear-gradient(135deg, #30cfd0, #330867)' },
+            { matrix: [[1],[1],[1]], color: 'linear-gradient(135deg, #fbc531, #e84118)' },
+            { matrix: [[1,1,1],[1,0,0],[1,0,0]], color: 'linear-gradient(135deg, #a18cd1, #fbc2eb)' },
+            { matrix: [[1,1],[1,0]], color: 'linear-gradient(135deg, #4facfe, #00f2fe)' },
+            { matrix: [[1,1,1],[0,1,0]], color: 'linear-gradient(135deg, #ff0844, #ffb199)' },
+            { matrix: [[1,1,1,1]], color: 'linear-gradient(135deg, #b224ef, #7579ff)' },
+            { matrix: [[1,1,1],[1,1,1],[1,1,1]], color: 'linear-gradient(135deg, #43e97b, #38f9d7)' }
         ];
 
         function addScore(points) {
@@ -255,7 +268,7 @@
             setTimeout(() => scoreEl.style.transform = 'scale(1)', 150);
         }
 
-        function showFloatingText(text, x, y, color = '#fff') {
+        function showFloatingText(text, x, y, color = '#00f2fe') {
             const el = document.createElement('div');
             el.className = 'floating-text';
             el.innerText = text;
@@ -271,7 +284,7 @@
             document.body.dataset.theme = currentTheme;
             const rect = boardEl.getBoundingClientRect();
             showFloatingText("PERFECT CLEAR!", rect.left + rect.width / 2, rect.top + rect.height / 2, '#ffea00');
-            if(navigator.vibrate) navigator.vibrate([100, 50, 200]);
+            safeVibrate([100, 50, 200]);
         }
 
         function startTimer() {
@@ -353,7 +366,7 @@
             const original = slots[slotIdx].querySelector('.draggable-shape');
             if(!original) return;
 
-            if (navigator.vibrate) navigator.vibrate(15);
+            safeVibrate(15);
             activeClone = original.cloneNode(true);
             activeClone.classList.add('dragging-clone');
             
@@ -365,7 +378,6 @@
             document.body.appendChild(activeClone);
             original.style.opacity = '0.2';
 
-            // 감도 적용을 위한 초기 터치 위치 및 클론 위치 저장
             dragStartX = e.clientX;
             dragStartY = e.clientY;
             initialCloneX = e.clientX - activeClone.offsetWidth / 2;
@@ -378,7 +390,6 @@
 
         function moveClone(x, y) {
             if (activeClone) {
-                // 손가락이 움직인 거리(Delta)에 DRAG_SENSITIVITY 배율을 곱해줌
                 const deltaX = (x - dragStartX) * DRAG_SENSITIVITY;
                 const deltaY = (y - dragStartY) * DRAG_SENSITIVITY;
 
@@ -434,14 +445,14 @@
 
             const original = slots[dragSlotIndex].querySelector('.draggable-shape');
             if (placed) {
-                if (navigator.vibrate) navigator.vibrate(30);
+                safeVibrate(30);
                 if (original) original.remove();
                 currentShapes[dragSlotIndex] = null;
                 if (currentShapes.every(s => s === null)) spawnShapes();
                 else checkGameOver();
             } else {
                 if (original) original.style.opacity = '1';
-                if (navigator.vibrate) navigator.vibrate([20, 20]);
+                safeVibrate([20, 20]);
             }
 
             activeClone.remove();
@@ -519,7 +530,7 @@
                 rowsToClear.forEach(r => { for (let c = 0; c < BOARD_SIZE; c++) board[r][c] = null; });
                 colsToClear.forEach(c => { for (let r = 0; r < BOARD_SIZE; r++) board[r][c] = null; });
 
-                if (navigator.vibrate) navigator.vibrate([50, 30, 80]);
+                safeVibrate([50, 30, 80]);
                 
                 const clearScore = 10 * (totalCleared ** 2);
                 addScore(clearScore);
@@ -577,7 +588,7 @@
             debugClicks++;
             if (debugTimer) clearTimeout(debugTimer);
             debugTimer = setTimeout(() => debugClicks = 0, 1500);
-            if (debugClicks >= 5) { addScore(10000); debugClicks = 0; if (navigator.vibrate) navigator.vibrate([50, 50, 100]); }
+            if (debugClicks >= 5) { addScore(10000); debugClicks = 0; safeVibrate([50, 50, 100]); }
         });
 
         initBoard(); spawnShapes(); startTimer();
